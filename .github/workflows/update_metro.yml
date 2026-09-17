@@ -1,0 +1,48 @@
+name: Update Metrovalencia Rolling Schedule
+
+on:
+  schedule:
+    # 02:45 UTC (03:45 en invierno, 04:45 en verano en España)
+    - cron: '45 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas requests
+
+      - name: Run Extraction & Optimization
+        run: |
+          python process_metro.py
+
+      - name: Deploy clean data branch
+        run: |
+          if [ -d "data" ]; then
+            echo "Desplegando metro_schedule.json en la rama 'data'..."
+            cd data
+            git init
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git checkout -b data
+            git add .
+            git commit -m "Auto-update Metrovalencia 2-day schedule: $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" data
+          else
+            echo "Error: no se generó el directorio de datos."
+            exit 1
+          fi
