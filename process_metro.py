@@ -14,7 +14,6 @@ OUTPUT_DIR = "data"
 OUTPUT_FILE = "metro_schedule.json"
 
 def time_to_minutes(time_str: str) -> int:
-    """Convierte 'HH:MM:SS' a minutos del día operativo (24:01 -> 1441)."""
     if pd.isna(time_str):
         return -1
     parts = str(time_str).strip().split(":")
@@ -23,28 +22,21 @@ def time_to_minutes(time_str: str) -> int:
     return -1
 
 def clean_text(val: str) -> str:
-    """Normaliza cadenas y elimina dobles espacios."""
     if pd.isna(val):
         return ""
     normalized = unicodedata.normalize("NFKC", str(val))
     return " ".join(normalized.split())
 
 def main():
-    # 1. Definir ventana de 2 días en hora peninsular
     tz = ZoneInfo("Europe/Madrid")
     now = datetime.now(tz)
     target_dates = [(now + timedelta(days=i)).strftime("%Y%m%d") for i in range(2)]
-    print(f"Calculando previsiones para los días: {target_dates}")
+    print(f"Generando previsión compacta para: {target_dates}")
 
-    # 2. Descarga del GTFS
-    print("Descargando GTFS de Transitous...")
-    headers = {"User-Agent": "Mozilla/5.0 (Metrovalencia 2Day Sync Agent)"}
-    resp = requests.get(GTFS_URL, headers=headers, timeout=60)
+    resp = requests.get(GTFS_URL, headers={"User-Agent": "Metrovalencia Sync"}, timeout=60)
     resp.raise_for_status()
-
     zf = zipfile.ZipFile(io.BytesIO(resp.content))
 
-    # 3. Carga selectiva de tablas
     routes = pd.read_csv(zf.open("routes.txt"), dtype=str)
     trips = pd.read_csv(zf.open("trips.txt"), dtype=str)
     stop_times = pd.read_csv(zf.open("stop_times.txt"), dtype=str)
@@ -52,21 +44,18 @@ def main():
     calendar = pd.read_csv(zf.open("calendar.txt"), dtype=str) if "calendar.txt" in zf.namelist() else pd.DataFrame()
     calendar_dates = pd.read_csv(zf.open("calendar_dates.txt"), dtype=str) if "calendar_dates.txt" in zf.namelist() else pd.DataFrame()
 
-    # Mapeo de línea: route_id -> route_short_name (1, 2, 3...)
     line_col = "route_short_name" if "route_short_name" in routes.columns else "route_long_name"
     route_map = dict(zip(routes["route_id"], routes[line_col]))
     trips["line"] = trips["route_id"].map(route_map).fillna(trips["route_id"])
 
-    # 4. Resolver servicios activos para cada uno de los 2 días
     day_names = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-    active_services_by_date = {}
+    trips_by_date = []
 
-    for d_str in target_dates:
+    for day_idx, d_str in enumerate(target_dates):
         dt = datetime.strptime(d_str, "%Y%m%d")
         weekday_col = day_names[dt.weekday()]
         active_services = set()
 
-        # Evaluación sobre calendar.txt
         if not calendar.empty:
             cal_mask = (
                 (calendar["start_date"] <= d_str) & 
@@ -75,73 +64,78 @@ def main():
             )
             active_services.update(calendar.loc[cal_mask, "service_id"].tolist())
 
-        # Excepciones sobre calendar_dates.txt
         if not calendar_dates.empty:
-            date_matches = calendar_dates[calendar_dates["date"] == d_str]
-            for _, r in date_matches.iterrows():
-                sid = str(r["service_id"])
-                ex = str(r["exception_type"])
+            matches = calendar_dates[calendar_dates["date"] == d_str]
+            for _, r in matches.iterrows():
+                sid, ex = str(r["service_id"]), str(r["exception_type"])
                 if ex == "1":
                     active_services.add(sid)
                 elif ex == "2":
                     active_services.discard(sid)
 
-        active_services_by_date[d_str] = active_services
-
-    # 5. Filtrar trips por fecha y transformar service_id en "vehiculo"
-    trips_by_date = []
-    for d_str, services in active_services_by_date.items():
-        matched = trips[trips["service_id"].isin(services)].copy()
-        matched["date"] = d_str
+        matched = trips[trips["service_id"].isin(active_services)].copy()
+        matched["day_idx"] = day_idx
         matched["vehiculo"] = matched["service_id"]
         trips_by_date.append(matched)
 
     if not trips_by_date:
-        print("No se encontraron servicios para las fechas indicadas.")
+        print("Sin servicios activos.")
         return
 
     active_trips_df = pd.concat(trips_by_date, ignore_index=True)
 
-    # 6. Cruce con stop_times
+    # Limpiar y mapear destinos en un índice global
+    active_trips_df["dest_clean"] = active_trips_df["trip_headsign"].apply(clean_text)
+    unique_dests = sorted(active_trips_df["dest_clean"].unique().tolist())
+    dest_map = {name: idx for idx, name in enumerate(unique_dests)}
+    active_trips_df["dest_idx"] = active_trips_df["dest_clean"].map(dest_map)
+
+    # Stop times
     time_col = "departure_time" if "departure_time" in stop_times.columns else "arrival_time"
     stop_times["m"] = stop_times[time_col].apply(time_to_minutes)
     valid_times = stop_times[stop_times["m"] >= 0][["trip_id", "stop_id", "m", "stop_sequence"]].copy()
 
-    # Join para obtener estación, hora, línea, destino, vehiculo y trip_id
     merged = valid_times.merge(
-        active_trips_df[["trip_id", "line", "trip_headsign", "vehiculo", "date"]],
+        active_trips_df[["trip_id", "line", "dest_idx", "vehiculo", "day_idx"]],
         on="trip_id"
     )
 
-    # Ordenar cronológicamente por día y minuto de paso
     merged["stop_sequence"] = merged["stop_sequence"].astype(int)
-    merged.sort_values(by=["date", "m", "stop_sequence"], inplace=True)
+    merged.sort_values(by=["day_idx", "m", "stop_sequence"], inplace=True)
 
-    # 7. Consolidación en diccionario único agrupado por stop_id
-    schedule_data = {}
+    # Generar salida con tuplas compactas
+    stops_data = {}
     for stop_id, group in merged.groupby("stop_id"):
-        passages = []
-        for _, row in group.iterrows():
-            passages.append({
-                "date": row["date"],
-                "m": int(row["m"]),
-                "line": str(row["line"]),
-                "dest": clean_text(row["trip_headsign"]),
-                "trip_id": str(row["trip_id"]),
-                "vehiculo": str(row["vehiculo"])
-            })
-        schedule_data[str(stop_id)] = passages
+        # [day_idx, m, line, dest_idx, trip_id, vehiculo]
+        stops_data[str(stop_id)] = [
+            [
+                int(row["day_idx"]),
+                int(row["m"]),
+                str(row["line"]),
+                int(row["dest_idx"]),
+                str(row["trip_id"]),
+                str(row["vehiculo"])
+            ]
+            for _, row in group.iterrows()
+        ]
 
-    # 8. Guardar archivo final
+    compact_payload = {
+        "dates": target_dates,
+        "destinations": unique_dests,
+        "stops": stops_data
+    }
+
     if os.path.exists(OUTPUT_DIR):
         shutil.rmtree(OUTPUT_DIR)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     output_path = os.path.join(OUTPUT_DIR, OUTPUT_FILE)
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(schedule_data, f, ensure_ascii=False, separators=(",", ":"))
+        # Separadores compactos sin espacios
+        json.dump(compact_payload, f, ensure_ascii=False, separators=(",", ":"))
 
-    print(f"Completado. Generado {output_path} con {len(schedule_data)} estaciones.")
+    size_mb = os.path.getsize(output_path) / (1024 * 1024)
+    print(f"Archivo generado: {output_path} ({size_mb:.2f} MB)")
 
 if __name__ == "__main__":
     main()
