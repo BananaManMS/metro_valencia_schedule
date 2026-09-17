@@ -3,7 +3,6 @@ import os
 import json
 import shutil
 import zipfile
-import unicodedata
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import pandas as pd
@@ -11,8 +10,7 @@ import requests
 
 GTFS_URL = "https://api.transitous.org/gtfs/es_Metro-de-Valencia.gtfs.zip"
 OUTPUT_DIR = "data"
-OUTPUT_SCHEDULE = "metro_schedule.json"
-OUTPUT_STATIONS = "stations.json"
+OUTPUT_FILE = "metro_schedule.json"
 
 def time_to_minutes(time_str: str) -> int:
     if pd.isna(time_str):
@@ -22,17 +20,11 @@ def time_to_minutes(time_str: str) -> int:
         return int(parts[0]) * 60 + int(parts[1])
     return -1
 
-def clean_text(val: str) -> str:
-    if pd.isna(val):
-        return ""
-    normalized = unicodedata.normalize("NFKC", str(val))
-    return " ".join(normalized.split())
-
 def main():
     tz = ZoneInfo("Europe/Madrid")
     now = datetime.now(tz)
     target_dates = [(now + timedelta(days=i)).strftime("%Y%m%d") for i in range(2)]
-    print(f"Generando previsiones para: {target_dates}")
+    print(f"Generando previsión de 2 días para: {target_dates}")
 
     resp = requests.get(GTFS_URL, headers={"User-Agent": "Metrovalencia Sync"}, timeout=60)
     resp.raise_for_status()
@@ -47,32 +39,12 @@ def main():
     calendar = pd.read_csv(zf.open("calendar.txt"), dtype=str) if "calendar.txt" in zf.namelist() else pd.DataFrame()
     calendar_dates = pd.read_csv(zf.open("calendar_dates.txt"), dtype=str) if "calendar_dates.txt" in zf.namelist() else pd.DataFrame()
 
-    # Preparar directorio de salida
-    if os.path.exists(OUTPUT_DIR):
-        shutil.rmtree(OUTPUT_DIR)
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    # 1. Extraer lista numérica de webID desde stops.txt
+    stops["stop_id_num"] = pd.to_numeric(stops["stop_id"], errors="coerce")
+    web_ids = sorted(stops["stop_id_num"].dropna().astype(int).unique().tolist())
+    print(f"Indexadas {len(web_ids)} estaciones bajo webID.")
 
-    # 1. Generar stations.json (webID numérico)
-    print("Generando lista de estaciones fija (stations.json)...")
-    stops["webID"] = pd.to_numeric(stops["stop_id"], errors="coerce")
-    valid_stops = stops.dropna(subset=["webID"]).drop_duplicates(subset=["webID"]).copy()
-    valid_stops["webID"] = valid_stops["webID"].astype(int)
-    valid_stops.sort_values(by="webID", inplace=True)
-
-    stations_list = [
-        {
-            "webID": int(row["webID"]),
-            "name": clean_text(row.get("stop_name", ""))
-        }
-        for _, row in valid_stops.iterrows()
-    ]
-
-    stations_path = os.path.join(OUTPUT_DIR, OUTPUT_STATIONS)
-    with open(stations_path, "w", encoding="utf-8") as f:
-        json.dump(stations_list, f, ensure_ascii=False, separators=(",", ":"))
-
-    # 2. Precalcular origen y destino por viaje
-    print("Calculando terminales por viaje...")
+    # 2. Precalcular origen y término por viaje (trip_id)
     stop_times["stop_sequence"] = stop_times["stop_sequence"].astype(int)
     stop_times_sorted = stop_times.sort_values(by=["trip_id", "stop_sequence"])
 
@@ -139,7 +111,7 @@ def main():
 
     merged.sort_values(by=["day_idx", "m", "stop_sequence"], inplace=True)
 
-    # 6. Salidas compactas agrupadas por estación
+    # 6. Salidas por estación
     stops_data = {}
     for stop_id, group in merged.groupby("stop_id"):
         stops_data[str(stop_id)] = [
@@ -154,17 +126,23 @@ def main():
             for _, row in group.iterrows()
         ]
 
+    # Payload unificado
     compact_payload = {
         "dates": target_dates,
+        "webID": web_ids,
         "stops": stops_data
     }
 
-    schedule_path = os.path.join(OUTPUT_DIR, OUTPUT_SCHEDULE)
-    with open(schedule_path, "w", encoding="utf-8") as f:
+    if os.path.exists(OUTPUT_DIR):
+        shutil.rmtree(OUTPUT_DIR)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    output_path = os.path.join(OUTPUT_DIR, OUTPUT_FILE)
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(compact_payload, f, separators=(",", ":"))
 
-    print(f"stations.json generado con {len(stations_list)} estaciones.")
-    print(f"metro_schedule.json generado ({os.path.getsize(schedule_path) / 1024:.1f} KB).")
+    size_kb = os.path.getsize(output_path) / 1024
+    print(f"Archivo generado: {output_path} ({size_kb:.1f} KB)")
 
 if __name__ == "__main__":
     main()
