@@ -14,6 +14,7 @@ OUTPUT_DIR = "data"
 OUTPUT_FILE = "metro_schedule.json"
 
 def time_to_minutes(time_str: str) -> int:
+    """Convierte 'HH:MM:SS' a minutos acumulados (24:01:00 -> 1441)."""
     if pd.isna(time_str):
         return -1
     parts = str(time_str).strip().split(":")
@@ -22,43 +23,50 @@ def time_to_minutes(time_str: str) -> int:
     return -1
 
 def clean_text(val: str) -> str:
+    """Normaliza texto Unicode y elimina espacios sobrantes."""
     if pd.isna(val):
         return ""
     normalized = unicodedata.normalize("NFKC", str(val))
     return " ".join(normalized.split())
 
+def load_csv(zf: zipfile.ZipFile, filename: str) -> pd.DataFrame:
+    """Carga CSV limpiando posibles espacios o caracteres BOM en las cabeceras."""
+    df = pd.read_csv(zf.open(filename), dtype=str)
+    df.columns = df.columns.str.strip().str.replace('\ufeff', '')
+    return df
+
 def main():
     tz = ZoneInfo("Europe/Madrid")
     now = datetime.now(tz)
     target_dates = [(now + timedelta(days=i)).strftime("%Y%m%d") for i in range(2)]
-    print(f"Generando previsión para: {target_dates}")
+    print(f"Generando previsión para los días: {target_dates}")
 
-    resp = requests.get(GTFS_URL, headers={"User-Agent": "Metrovalencia Sync"}, timeout=60)
+    resp = requests.get(GTFS_URL, headers={"User-Agent": "Metrovalencia Sync Agent"}, timeout=60)
     resp.raise_for_status()
     zf = zipfile.ZipFile(io.BytesIO(resp.content))
 
-    # Carga de tablas
-    routes = pd.read_csv(zf.open("routes.txt"), dtype=str)
-    trips = pd.read_csv(zf.open("trips.txt"), dtype=str)
-    stops = pd.read_csv(zf.open("stops.txt"), dtype=str)
-    stop_times = pd.read_csv(zf.open("stop_times.txt"), dtype=str)
+    # 1. Carga con cabeceras exactas
+    routes = load_csv(zf, "routes.txt")
+    trips = load_csv(zf, "trips.txt")
+    stops = load_csv(zf, "stops.txt")
+    stop_times = load_csv(zf, "stop_times.txt")
     
-    calendar = pd.read_csv(zf.open("calendar.txt"), dtype=str) if "calendar.txt" in zf.namelist() else pd.DataFrame()
-    calendar_dates = pd.read_csv(zf.open("calendar_dates.txt"), dtype=str) if "calendar_dates.txt" in zf.namelist() else pd.DataFrame()
+    calendar = load_csv(zf, "calendar.txt") if "calendar.txt" in zf.namelist() else pd.DataFrame()
+    calendar_dates = load_csv(zf, "calendar_dates.txt") if "calendar_dates.txt" in zf.namelist() else pd.DataFrame()
 
-    # 1. Diccionario webID: { stop_id_num: stop_name }
+    # 2. Generación del diccionario webID: { "stop_id": "stop_name" }
     stops["stop_id_num"] = pd.to_numeric(stops["stop_id"], errors="coerce")
-    valid_stops = stops.dropna(subset=["stop_id_num"]).drop_duplicates(subset=["stop_id_num"]).copy()
+    valid_stops = stops.dropna(subset=["stop_id_num", "stop_name"]).drop_duplicates(subset=["stop_id_num"]).copy()
     valid_stops["stop_id_num"] = valid_stops["stop_id_num"].astype(int)
     valid_stops.sort_values(by="stop_id_num", inplace=True)
 
     web_id_map = {
-        int(row["stop_id_num"]): clean_text(row.get("stop_name", ""))
+        str(row["stop_id_num"]): clean_text(row["stop_name"])
         for _, row in valid_stops.iterrows()
     }
-    print(f"Indexadas {len(web_id_map)} estaciones en el mapa webID.")
+    print(f"Estaciones indexadas en webID: {len(web_id_map)}")
 
-    # 2. Precalcular origen y término por viaje (trip_id)
+    # 3. Cálculo de terminales (origen y destino) por trip_id
     stop_times["stop_sequence"] = stop_times["stop_sequence"].astype(int)
     stop_times_sorted = stop_times.sort_values(by=["trip_id", "stop_sequence"])
 
@@ -70,13 +78,13 @@ def main():
     trip_terminals["origin_stop_id"] = trip_terminals["origin_stop_id"].astype(int)
     trip_terminals["dest_stop_id"] = trip_terminals["dest_stop_id"].astype(int)
 
-    # 3. Mapeo de líneas y vehículo
+    # 4. Mapeo de línea comercial y vehículo
     line_col = "route_short_name" if "route_short_name" in routes.columns else "route_long_name"
     route_map = dict(zip(routes["route_id"], routes[line_col]))
     trips["line"] = trips["route_id"].map(route_map).fillna(trips["route_id"])
     trips["vehiculo"] = trips["service_id"]
 
-    # 4. Servicios activos en los 2 días
+    # 5. Detección de servicios activos en la ventana de 2 días
     day_names = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
     trips_by_date = []
 
@@ -85,7 +93,7 @@ def main():
         weekday_col = day_names[dt.weekday()]
         active_services = set()
 
-        if not calendar.empty:
+        if not calendar.empty and weekday_col in calendar.columns:
             cal_mask = (
                 (calendar["start_date"] <= d_str) & 
                 (calendar["end_date"] >= d_str) & 
@@ -107,13 +115,13 @@ def main():
         trips_by_date.append(matched)
 
     if not trips_by_date:
-        print("Sin servicios activos.")
+        print("Aviso: no hay servicios programados para estas fechas.")
         return
 
     active_trips_df = pd.concat(trips_by_date, ignore_index=True)
     active_trips_df = active_trips_df.merge(trip_terminals, on="trip_id", how="left")
 
-    # 5. Stop times con minutos de paso
+    # 6. Minutos de paso por parada
     time_col = "departure_time" if "departure_time" in stop_times.columns else "arrival_time"
     stop_times["m"] = stop_times[time_col].apply(time_to_minutes)
     valid_times = stop_times[stop_times["m"] >= 0][["trip_id", "stop_id", "m", "stop_sequence"]].copy()
@@ -125,7 +133,7 @@ def main():
 
     merged.sort_values(by=["day_idx", "m", "stop_sequence"], inplace=True)
 
-    # 6. Salidas por estación
+    # 7. Salidas compactas agrupadas por estación
     stops_data = {}
     for stop_id, group in merged.groupby("stop_id"):
         stops_data[str(stop_id)] = [
@@ -140,7 +148,7 @@ def main():
             for _, row in group.iterrows()
         ]
 
-    # Payload unificado
+    # 8. Guardar JSON optimizado
     compact_payload = {
         "dates": target_dates,
         "webID": web_id_map,
@@ -156,7 +164,7 @@ def main():
         json.dump(compact_payload, f, ensure_ascii=False, separators=(",", ":"))
 
     size_kb = os.path.getsize(output_path) / 1024
-    print(f"Archivo generado: {output_path} ({size_kb:.1f} KB)")
+    print(f"Generado con éxito: {output_path} ({size_kb:.1f} KB)")
 
 if __name__ == "__main__":
     main()
