@@ -3,7 +3,6 @@ import os
 import json
 import shutil
 import zipfile
-import unicodedata
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import pandas as pd
@@ -21,17 +20,11 @@ def time_to_minutes(time_str: str) -> int:
         return int(parts[0]) * 60 + int(parts[1])
     return -1
 
-def clean_text(val: str) -> str:
-    if pd.isna(val):
-        return ""
-    normalized = unicodedata.normalize("NFKC", str(val))
-    return " ".join(normalized.split())
-
 def main():
     tz = ZoneInfo("Europe/Madrid")
     now = datetime.now(tz)
     target_dates = [(now + timedelta(days=i)).strftime("%Y%m%d") for i in range(2)]
-    print(f"Generando previsión compacta para: {target_dates}")
+    print(f"Generando previsiones de origen/término para: {target_dates}")
 
     resp = requests.get(GTFS_URL, headers={"User-Agent": "Metrovalencia Sync"}, timeout=60)
     resp.raise_for_status()
@@ -44,10 +37,26 @@ def main():
     calendar = pd.read_csv(zf.open("calendar.txt"), dtype=str) if "calendar.txt" in zf.namelist() else pd.DataFrame()
     calendar_dates = pd.read_csv(zf.open("calendar_dates.txt"), dtype=str) if "calendar_dates.txt" in zf.namelist() else pd.DataFrame()
 
+    # 1. Precalcular origen y término por trip_id
+    print("Calculando estaciones cabecera (origen y destino) por viaje...")
+    stop_times["stop_sequence"] = stop_times["stop_sequence"].astype(int)
+    stop_times_sorted = stop_times.sort_values(by=["trip_id", "stop_sequence"])
+
+    trip_terminals = stop_times_sorted.groupby("trip_id").agg(
+        origin_stop_id=("stop_id", "first"),
+        dest_stop_id=("stop_id", "last")
+    ).reset_index()
+
+    # Convertir stop_ids a int para menor huella JSON
+    trip_terminals["origin_stop_id"] = trip_terminals["origin_stop_id"].astype(int)
+    trip_terminals["dest_stop_id"] = trip_terminals["dest_stop_id"].astype(int)
+
+    # 2. Mapeo de líneas
     line_col = "route_short_name" if "route_short_name" in routes.columns else "route_long_name"
     route_map = dict(zip(routes["route_id"], routes[line_col]))
     trips["line"] = trips["route_id"].map(route_map).fillna(trips["route_id"])
 
+    # 3. Servicios activos en los 2 días
     day_names = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
     trips_by_date = []
 
@@ -75,7 +84,6 @@ def main():
 
         matched = trips[trips["service_id"].isin(active_services)].copy()
         matched["day_idx"] = day_idx
-        matched["vehiculo"] = matched["service_id"]
         trips_by_date.append(matched)
 
     if not trips_by_date:
@@ -84,44 +92,38 @@ def main():
 
     active_trips_df = pd.concat(trips_by_date, ignore_index=True)
 
-    # Limpiar y mapear destinos en un índice global
-    active_trips_df["dest_clean"] = active_trips_df["trip_headsign"].apply(clean_text)
-    unique_dests = sorted(active_trips_df["dest_clean"].unique().tolist())
-    dest_map = {name: idx for idx, name in enumerate(unique_dests)}
-    active_trips_df["dest_idx"] = active_trips_df["dest_clean"].map(dest_map)
+    # Inyectar origen y destino precalculados a los viajes activos
+    active_trips_df = active_trips_df.merge(trip_terminals, on="trip_id", how="left")
 
-    # Stop times
+    # 4. Stop times con minutos de paso
     time_col = "departure_time" if "departure_time" in stop_times.columns else "arrival_time"
     stop_times["m"] = stop_times[time_col].apply(time_to_minutes)
     valid_times = stop_times[stop_times["m"] >= 0][["trip_id", "stop_id", "m", "stop_sequence"]].copy()
 
     merged = valid_times.merge(
-        active_trips_df[["trip_id", "line", "dest_idx", "vehiculo", "day_idx"]],
+        active_trips_df[["trip_id", "line", "origin_stop_id", "dest_stop_id", "day_idx"]],
         on="trip_id"
     )
 
-    merged["stop_sequence"] = merged["stop_sequence"].astype(int)
     merged.sort_values(by=["day_idx", "m", "stop_sequence"], inplace=True)
 
-    # Generar salida con tuplas compactas
+    # 5. Generar payload sin claves redundantes
     stops_data = {}
     for stop_id, group in merged.groupby("stop_id"):
-        # [day_idx, m, line, dest_idx, trip_id, vehiculo]
+        # [day_idx, m, line, origin_stop_id, dest_stop_id]
         stops_data[str(stop_id)] = [
             [
                 int(row["day_idx"]),
                 int(row["m"]),
                 str(row["line"]),
-                int(row["dest_idx"]),
-                str(row["trip_id"]),
-                str(row["vehiculo"])
+                int(row["origin_stop_id"]),
+                int(row["dest_stop_id"])
             ]
             for _, row in group.iterrows()
         ]
 
     compact_payload = {
         "dates": target_dates,
-        "destinations": unique_dests,
         "stops": stops_data
     }
 
@@ -131,11 +133,10 @@ def main():
 
     output_path = os.path.join(OUTPUT_DIR, OUTPUT_FILE)
     with open(output_path, "w", encoding="utf-8") as f:
-        # Separadores compactos sin espacios
-        json.dump(compact_payload, f, ensure_ascii=False, separators=(",", ":"))
+        json.dump(compact_payload, f, separators=(",", ":"))
 
-    size_mb = os.path.getsize(output_path) / (1024 * 1024)
-    print(f"Archivo generado: {output_path} ({size_mb:.2f} MB)")
+    size_kb = os.path.getsize(output_path) / 1024
+    print(f"Generado con éxito: {output_path} ({size_kb:.1f} KB)")
 
 if __name__ == "__main__":
     main()
