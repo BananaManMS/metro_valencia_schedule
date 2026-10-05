@@ -2,16 +2,23 @@ name: Update Metrovalencia Rolling Schedule
 
 on:
   schedule:
-    # 02:45 UTC (03:45 en invierno, 04:45 en verano en España)
-    - cron: '45 2 * * *'
+    # 02:48 UTC (03:48 invierno / 04:48 verano en España)
+    - cron: '48 2 * * *'
+    # Respaldo por si el primero se retrasa o se salta
+    - cron: '23 3 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: metro-schedule
+  cancel-in-progress: false
+
 jobs:
   build-and-sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
