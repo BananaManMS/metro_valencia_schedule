@@ -2,10 +2,8 @@ name: Update Metrovalencia Rolling Schedule
 
 on:
   schedule:
-    # 02:48 UTC (03:48 invierno / 04:48 verano en España)
-    - cron: '48 2 * * *'
-    # Respaldo por si el primero se retrasa o se salta
-    - cron: '23 3 * * *'
+    - cron: '17 0 * * *'   # principal, minuto raro
+    - cron: '37 2 * * *'   # respaldo
   workflow_dispatch:
 
 permissions:
