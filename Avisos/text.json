@@ -9,10 +9,7 @@
     "titulo_ca": "Gràcies per descarregar VLC Transit!",
     "mensaje_es": "Una app multimodal que cubre todos los modos posibles de transporte publico de la zona de València, con salidas en tiempo real todo en una sola app. \n\nIncluye varias funciones como búsqueda de rutas, guardar lugares como favoritos, 'fijar' metros para que te avise desde tu pantalla de inicio cuándo pasa por tu estación, mapa de localizaciones de Cercanías en vivo... \n\nSi tienes algún problema, no dudes en contactarme. \n\n❤️Hecho con amor por Noeh",
     "mensaje_ca": "Una app multimodal que cobrix tots els modes possibles de transport públic de la zona de València, amb eixides en temps real tot en una sola app. \n\nInclou diverses funcions com ara cerca de rutes, guardar llocs com a favorits, 'fixar' metros perquè t'avise des de la pantalla d'inici de quan passa per la teua estació, mapa de localitzacions de Rodalia en directe... \n\nSi tens algun problema, no dubtes a contactar amb mi. \n\n❤️Fet amb amor per Noeh",
-    "imagen": "https://raw.githubusercontent.com/BananaManMS/metro_valencia_schedule/mapas/Plano_Comun.pdf",
-    "enlace": "https://ejemplo.com/novedades",
-    "texto_enlace_es": "Más información",
-    "texto_enlace_ca": "Més informació"
+    "imagen": "https://www.visitvalencia.com/sites/default/files/media/media-images/images/Tranv%C3%ADa-VV-13310-%20Foto_Abel_Gimeno.jpg",
   },
   {
     "id": "aviso_obras_cercanias_02",
