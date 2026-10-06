@@ -3,7 +3,7 @@
     "id": "aviso_ejemplo_01",
     "activo": true,
     "tipo": "azul",
-    "repetir": false
+    "repetir": false,
     "hasta_fecha": "2026-12-31",
     "titulo_es": "Nueva actualización disponible",
     "titulo_ca": "Nova actualització disponible",
@@ -18,7 +18,7 @@
     "id": "aviso_obras_cercanias",
     "activo": true,
     "tipo": "rojo",
-    "repetir": true
+    "repetir": true,
     "hasta_fecha": "2026-10-15",
     "titulo_es": "METROVALENCIA: Obras Alameda-Marítim",
     "titulo_ca": "METROVALENCIA: Obres Alameda-Marítim",
