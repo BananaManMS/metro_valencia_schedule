@@ -1,0 +1,29 @@
+[
+  {
+    "id": "aviso_ejemplo_01",
+    "activo": true,
+    "tipo": "azul",
+    "hasta_fecha": "2026-12-31",
+    "titulo_es": "Nueva actualización disponible",
+    "titulo_ca": "Nova actualització disponible",
+    "mensaje_es": "Hemos añadido mejoras en los mapas en directo y tiempos de paso.",
+    "mensaje_ca": "Hem afegit millores en els mapes en directe i temps de pas.",
+    "imagen": "https://raw.githubusercontent.com/BananaManMS/metro_valencia_schedule/mapas/Plano_Comun.pdf",
+    "enlace": "https://ejemplo.com/novedades",
+    "texto_enlace_es": "Más información",
+    "texto_enlace_ca": "Més informació"
+  },
+  {
+    "id": "aviso_huelga_cercanias",
+    "activo": false,
+    "tipo": "rojo",
+    "hasta_fecha": "2026-10-15",
+    "titulo_es": "Afectación en líneas C1 y C2",
+    "titulo_ca": "Afectació en línies C1 i C2",
+    "mensaje_es": "Servicios mínimos fijados al 75% durante la jornada de hoy.",
+    "mensaje_ca": "Serveis mínims fixats al 75% durant la jornada de hui.",
+    "enlace": "",
+    "texto_enlace_es": "",
+    "texto_enlace_ca": ""
+  }
+]
