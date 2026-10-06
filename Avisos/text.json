@@ -1,6 +1,6 @@
 [
   {
-    "id": "aviso_ejemplo_01",
+    "id": "aviso_ejemplo_02",
     "activo": true,
     "tipo": "azul",
     "repetir": false,
@@ -15,7 +15,7 @@
     "texto_enlace_ca": "Més informació"
   },
   {
-    "id": "aviso_obras_cercanias",
+    "id": "aviso_obras_cercanias_02",
     "activo": true,
     "tipo": "rojo",
     "repetir": true,
