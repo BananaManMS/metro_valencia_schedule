@@ -1,0 +1,32 @@
+[
+  {
+    "id": "aviso_ejemplo_02",
+    "activo": true,
+    "tipo": "azul",
+    "repetir": false,
+    "hasta_fecha": "2026-12-31",
+    "titulo_es": "Nueva actualización disponible",
+    "titulo_ca": "Nova actualització disponible",
+    "mensaje_es": "Hemos añadido mejoras en los mapas en directo y tiempos de paso.",
+    "mensaje_ca": "Hem afegit millores en els mapes en directe i temps de pas.",
+    "imagen": "https://raw.githubusercontent.com/BananaManMS/metro_valencia_schedule/mapas/Plano_Comun.pdf",
+    "enlace": "https://ejemplo.com/novedades",
+    "texto_enlace_es": "Más información",
+    "texto_enlace_ca": "Més informació"
+  },
+  {
+    "id": "aviso_obras_cercanias_02",
+    "activo": true,
+    "tipo": "rojo",
+    "repetir": true,
+    "hasta_fecha": "2026-10-15",
+    "titulo_es": "METROVALENCIA: Obras Alameda-Marítim",
+    "titulo_ca": "METROVALENCIA: Obres Alameda-Marítim",
+    "mensaje_es": "Obras en el tramo Alameda a Marítim desde el 01 de julio hasta el 31 de agosto, ambos inclusive. Los metro L5 y L7 acabarán su recorrido en Alameda. \nUsa alternativas de la EMT como la L32, L92, L4 o el tranvía dirección Marítim o Dr. Lluch en Benimaclet",
+    "mensaje_ca": "Obres en el tram Alameda a Marítim des del 01 de juliol fins al 31 d'agost, ambdós inclosos. Els metro L5 i L7 acabaran el seu recorregut en Alameda. \nUsa alternatives de la EMT com la L32, L92, L4 o el tranvía direcció Marítim o Dr. Lluch en Benimaclet",
+    "imagen": "https://7televalencia.com/wp-content/uploads/2025/11/PORTADAS-WEB-2025-11-14T132856.426.png",
+    "enlace": "https://www.metrovalencia.es/es/metrovalencia-interrumpira-por-obras-de-renovacion-el-servicio-de-las-estaciones-de-arago-amistat-ayora-y-maritim-del-25-de-junio-al-30-de-agosto/",
+    "texto_enlace_es": "Metrovalencia",
+    "texto_enlace_ca": "Metrovalencia"
+  }
+]
