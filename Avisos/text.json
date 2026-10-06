@@ -3,6 +3,7 @@
     "id": "aviso_bienvenida",
     "activo": true,
     "tipo": "azul",
+    "oculto": true,
     "repetir": false,
     "hasta_fecha": "2100-12-31",
     "titulo_es": "¡Gracias por descargar VLC Transit!",
