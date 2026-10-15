@@ -14,7 +14,7 @@
   },
   {
     "id": "aviso_retrasos_tranvias_07102026",
-    "activo": true,
+    "activo": false,
     "tipo": "naranja",
     "repetir": true,
     "hasta_fecha": "2026-12-31",
