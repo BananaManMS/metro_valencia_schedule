@@ -14,17 +14,17 @@
   },
   {
     "id": "aviso_retrasos_tranvias_07102026",
-    "activo": false,
-    "tipo": "naranja",
-    "repetir": true,
-    "hasta_fecha": "2026-12-31",
-    "titulo_es": "METROVALENCIA: Tranvías con retraso",
-    "titulo_ca": "METROVALENCIA: Tranvías con retraso",
-    "mensaje_es": "Los tranvías L4 y L6 sufren retrasos contínuos en todos sus tramos, los pasos en tiempo real puede no ser exactos hasta que Metrovalencia no lo solucione, planifica con antelación tus viajes.",
-    "mensaje_ca": "Els tramvies L4 i L6 patixen retards continus en tots els seus trams, els passos en temps real poden no ser exactes fins que Metrovalencia no ho solucione, planifica amb antelació els teus viatges.",
-    "imagen": "https://blog.avptp.org/content/images/size/w2000/2026/07/95182.jpg",
-    "enlace": "https://blog.avptp.org/lavptp-denuncia-el-caos-permanent-al-tramvia-des-de-la-instal-lacio-del-nou-sistema-de-seguretat-2/",
-    "texto_enlace_es": "AVPTP",
-    "texto_enlace_ca": "AVPTP"
+    "activo": true,
+    "tipo": "rojo",
+    "repetir": false,
+    "hasta_fecha": "2026-07-20",
+    "titulo_es": "METROVALENCIA: L5 y L7 con retraso",
+    "titulo_ca": "METROVALENCIA: L5 i L7 amb retraso",
+    "mensaje_es": "Los metros L5 y L7 están sufriendo retrasos en algunos de sus tramos, los pasos en tiempo real puede no ser exactos hasta que Metrovalencia no lo solucione, planifica con antelación tus viajes.",
+    "mensaje_ca": "Els metros L5 i L7 están patint retards alguns dels seus trams, els passos en temps real poden no ser exactes fins que Metrovalencia no ho solucione, planifica amb antelació els teus viatges.",
+    "imagen": "",
+    "enlace": "",
+    "texto_enlace_es": "",
+    "texto_enlace_ca": ""
   }
 ]
