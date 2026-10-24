@@ -16,7 +16,7 @@
     "id": "aviso_maratón_metro_20261025",
     "activo": true,
     "tipo": "rojo",
-    "repetir": false,
+    "repetir": true,
     "hasta_fecha": "2026-10-25",
     "titulo_es": "EMT y METROVALENCIA: Media maratón",
     "titulo_ca": "EMT i METROVALENCIA: Mitja marató",
