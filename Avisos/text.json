@@ -13,18 +13,18 @@
     "imagen": "https://www.visitvalencia.com/sites/default/files/media/media-images/images/Tranv%C3%ADa-VV-13310-%20Foto_Abel_Gimeno.jpg"
   },
   {
-    "id": "aviso_retrasos_metro_07202026",
+    "id": "aviso_maratón_metro_20261025",
     "activo": true,
     "tipo": "rojo",
     "repetir": false,
-    "hasta_fecha": "2026-10-20",
-    "titulo_es": "METROVALENCIA: L5 y L7 con retraso",
-    "titulo_ca": "METROVALENCIA: L5 i L7 amb retraso",
-    "mensaje_es": "Los metros L5 y L7 están sufriendo retrasos en algunos de sus tramos, los pasos en tiempo real puede no ser exactos hasta que Metrovalencia no lo solucione, planifica con antelación tus viajes.",
-    "mensaje_ca": "Els metros L5 i L7 están patint retards alguns dels seus trams, els passos en temps real poden no ser exactes fins que Metrovalencia no ho solucione, planifica amb antelació els teus viatges.",
-    "imagen": "",
-    "enlace": "",
-    "texto_enlace_es": "",
-    "texto_enlace_ca": ""
+    "hasta_fecha": "2026-10-25",
+    "titulo_es": "EMT y METROVALENCIA: Media maratón",
+    "titulo_ca": EMT i METROVALENCIA: Mitja marató",
+    "mensaje_es": "Ante la celebración de la media maratón el 25 de octubre: \nMetrovalencia: Sin servicio entre De. Lluch y Pont de Fusta y desde Marítim a Tossal del Rei desde las 6h hasta las 12h. \nEMT: Consulta los múltiples cambios de recorridos desde las 8h hasta las 12h aproximadamente en el botón y enlace inferior.",
+    "mensaje_ca": "Davant de la celebració de la mitja marató el 25 d'octubre: \nMetrovalencia: Sense servici entre Dr. Lluch i Pont de Fusta i des de Marítim a Tossal del Rei des de les 6h fins a les 12h. \nEMT: Consulta els múltiples canvis de recorreguts des de les 8h fins a les 12h aproximadament en el botó i enllaç inferior.",
+    "imagen": "https://www.valenciaextra.com/uploads/s1/16/34/45/11/emt-valencia.jpeg",
+    "enlace": "https://www.emtvalencia.es/wp/wp-content/uploads/2026/10/Desvios-Medio-Maraton-25-10-2026.pdf",
+    "texto_enlace_es": "EMT",
+    "texto_enlace_ca": "EMT"
   }
 ]
