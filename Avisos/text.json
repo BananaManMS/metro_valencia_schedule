@@ -14,7 +14,7 @@
   },
   {
     "id": "aviso_maratón_metro_20261025",
-    "activo": true,
+    "activo": false,
     "tipo": "rojo",
     "repetir": true,
     "hasta_fecha": "2026-10-25",
