@@ -13,18 +13,18 @@
     "imagen": "https://www.visitvalencia.com/sites/default/files/media/media-images/images/Tranv%C3%ADa-VV-13310-%20Foto_Abel_Gimeno.jpg"
   },
   {
-    "id": "aviso_maratón_metro_20261025",
-    "activo": false,
-    "tipo": "rojo",
+    "id": "aviso_metro_202611122",
+    "activo": true,
+    "tipo": "naranja",
     "repetir": true,
-    "hasta_fecha": "2026-10-25",
-    "titulo_es": "EMT y METROVALENCIA: Media maratón",
-    "titulo_ca": "EMT i METROVALENCIA: Mitja marató",
-    "mensaje_es": "Ante la celebración de la media maratón el 25 de octubre: \nMetrovalencia: Sin servicio entre De. Lluch y Pont de Fusta y desde Marítim a Tossal del Rei desde las 6h hasta las 12h. \nEMT: Consulta los múltiples cambios de recorridos desde las 8h hasta las 12h aproximadamente en el botón y enlace inferior.",
-    "mensaje_ca": "Davant de la celebració de la mitja marató el 25 d'octubre: \nMetrovalencia: Sense servici entre Dr. Lluch i Pont de Fusta i des de Marítim a Tossal del Rei des de les 6h fins a les 12h. \nEMT: Consulta els múltiples canvis de recorreguts des de les 8h fins a les 12h aproximadament en el botó i enllaç inferior.",
-    "imagen": "https://www.valenciaextra.com/uploads/s1/16/34/45/11/emt-valencia.jpeg",
-    "enlace": "https://www.emtvalencia.es/wp/wp-content/uploads/2026/10/Desvios-Medio-Maraton-25-10-2026.pdf",
-    "texto_enlace_es": "EMT",
-    "texto_enlace_ca": "EMT"
+    "hasta_fecha": "2026-12-25",
+    "titulo_es": "METROVALENCIA: Falta de personal",
+    "titulo_ca": "METROVALENCIA: Falta de personal",
+    "mensaje_es": "El servicio de Metrovalencia se está viendo afectado por la falta de personal de Metrovalencia, con reorganización de servicio y supresiones puntuales de la L8. \n\nPlanifica con antelación tus viajes.",
+    "mensaje_ca": "El servici de *Metrovalencia s'està veient afectat per la falta de personal de *Metrovalencia, amb reorganització de servici i supressions puntuals de la L8. \n\nPlanifica amb antelació els teus viatges.",
+    "imagen": "https://www.valenciaextra.com/uploads/s1/17/17/00/45/gente-en-un-tren-de-metrovalencia-en-un-dia-de-huelga.jpeg",
+    "enlace": "https://www.levante-emv.com/comunitat-valenciana/2026/11/18/la-baja-de-dos-maquinistas-obliga-a-suspender-16-servicios-de-trenes-en-las-lineas-1-y-2-de-metrovalencia-136550020.html",
+    "texto_enlace_es": "Levante EMV",
+    "texto_enlace_ca": "Levante EMV"
   }
 ]
